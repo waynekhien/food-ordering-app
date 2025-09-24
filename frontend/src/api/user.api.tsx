@@ -1,5 +1,6 @@
 import { useAuth0 } from "@auth0/auth0-react";
 import { useMutation } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -9,7 +10,7 @@ type CreateUserRequest = {
 };
 
 export const useCreateMyUser = () => {
-  const {getAccessTokenSilently} = useAuth0();
+  const { getAccessTokenSilently } = useAuth0();
 
   const createMyUserRequest = async (user: CreateUserRequest) => {
     const accessToken = await getAccessTokenSilently();
@@ -17,18 +18,23 @@ export const useCreateMyUser = () => {
     const response = await fetch(`${API_BASE_URL}/api/my/user`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${accessToken}` ,
+        Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(user)
+      body: JSON.stringify(user),
     });
 
-    if(!response.ok){
-        throw new Error("Fail to create user")
+    if (!response.ok) {
+      throw new Error("Fail to create user");
     }
   };
 
-  const {mutateAsync: createUser, isPending, isError, isSuccess} = useMutation({
+  const {
+    mutateAsync: createUser,
+    isPending,
+    isError,
+    isSuccess,
+  } = useMutation({
     mutationFn: createMyUserRequest,
   });
 
@@ -36,6 +42,59 @@ export const useCreateMyUser = () => {
     createUser,
     isLoading: isPending,
     isError,
-    isSuccess
+    isSuccess,
+  };
+};
+
+type UpdateMyUserRequest = {
+  name: string;
+  addressLine1: string;
+  city: string;
+  country: string;
+};
+
+export const useUpdateMyUser = () => {
+  const { getAccessTokenSilently } = useAuth0();
+
+  const updateMyUserRequest = async (formData: UpdateMyUserRequest) => {
+    const accessToken = await getAccessTokenSilently();
+    const response = await fetch(`${API_BASE_URL}/api/my/user`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(formData),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to update user");
+    }
+    return response.json();
+  };
+
+  const {
+    mutateAsync: updateUser,
+    isPending,
+    isSuccess,
+    error,
+    reset,
+  } = useMutation({
+    mutationFn: updateMyUserRequest,
+  });
+
+  if(isSuccess) {
+    toast.success("User Profile Updated!")
+  }
+
+  if(error) {
+    toast.error(error.toString());
+    reset()
+  }
+
+  return {
+    updateUser,
+    isLoading : isPending,
+
   }
 };
